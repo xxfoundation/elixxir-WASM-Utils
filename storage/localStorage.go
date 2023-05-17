@@ -10,11 +10,12 @@
 package storage
 
 import (
+	"encoding/base64"
 	"os"
 	"strings"
 	"syscall/js"
 
-	"github.com/Max-Sum/base32768"
+	// "github.com/Max-Sum/base32768"
 
 	"gitlab.com/elixxir/wasm-utils/exception"
 	"gitlab.com/elixxir/wasm-utils/utils"
@@ -27,7 +28,9 @@ import (
 //
 // The chosen prefix is two characters, that when converted to UTF16, take up 4
 // bytes without any zeros to make them more unique.
-const localStorageWasmPrefix = "🞮🞮"
+const localStorageWasmPrefix = "xxdkWasmStorage/"
+
+// const localStorageWasmPrefix = "🞮🞮"
 
 // LocalStorage contains the js.Value representation of localStorage.
 type LocalStorage struct {
@@ -66,13 +69,15 @@ func (ls *LocalStorage) Get(keyName string) ([]byte, error) {
 		return nil, err
 	}
 
-	return base32768.SafeEncoding.DecodeString(value)
+	// return base32768.SafeEncoding.DecodeString(value)
+	return base64.StdEncoding.DecodeString(value)
 }
 
 // Set encodes the bytes to a string and adds them to local storage at the
 // given key name. Returns an error if local storage quota has been reached.
 func (ls *LocalStorage) Set(keyName string, keyValue []byte) error {
-	encoded := base32768.SafeEncoding.EncodeToString(keyValue)
+	// encoded := base32768.SafeEncoding.EncodeToString(keyValue)
+	encoded := base64.StdEncoding.EncodeToString(keyValue)
 	return ls.v.SetItem(ls.prefix+keyName, encoded)
 }
 
