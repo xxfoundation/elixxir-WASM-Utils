@@ -16,5 +16,5 @@ binary:
 tests:
 	cp exception/throw_js.s exception/throw_js.s.bak
 	> exception/throw_js.s
-	-GOOS=js GOARCH=wasm go test -cover -v ./storage/...
+	-GOOS=js GOARCH=wasm go test -v ./...
 	mv exception/throw_js.s.bak exception/throw_js.s

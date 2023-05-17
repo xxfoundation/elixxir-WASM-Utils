@@ -85,7 +85,7 @@ func (ls *LocalStorage) RemoveItem(keyName string) {
 // Clear clears all the keys in storage. Returns the number of keys cleared.
 func (ls *LocalStorage) Clear() int {
 	// Get a copy of all key names at once
-	keys := ls.v.keysPrefix(ls.prefix)
+	keys := ls.v.KeysPrefix(ls.prefix)
 
 	// Loop through each key
 	for _, keyName := range keys {
@@ -99,7 +99,7 @@ func (ls *LocalStorage) Clear() int {
 // keys cleared.
 func (ls *LocalStorage) ClearPrefix(prefix string) int {
 	// Get a copy of all key names at once
-	keys := ls.v.keysPrefix(ls.prefix + prefix)
+	keys := ls.v.KeysPrefix(ls.prefix + prefix)
 
 	// Loop through each key
 	for _, keyName := range keys {
@@ -121,7 +121,7 @@ func (ls *LocalStorage) Key(n int) (string, error) {
 
 // Keys returns a list of all key names in local storage.
 func (ls *LocalStorage) Keys() []string {
-	return ls.v.keysPrefix(ls.prefix)
+	return ls.v.KeysPrefix(ls.prefix)
 }
 
 // Length returns the number of keys in localStorage.
@@ -214,9 +214,9 @@ func (ls *LocalStorageJS) Keys() []string {
 	return keys
 }
 
-// keysPrefix returns a list of all key names in local storage with the given
+// KeysPrefix returns a list of all key names in local storage with the given
 // prefix and trims the prefix from each key name.
-func (ls *LocalStorageJS) keysPrefix(prefix string) []string {
+func (ls *LocalStorageJS) KeysPrefix(prefix string) []string {
 	keysJS := utils.Object.Call("keys", ls.Value)
 	keys := make([]string, 0, keysJS.Length())
 	for i := 0; i < keysJS.Length(); i++ {
