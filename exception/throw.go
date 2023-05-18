@@ -28,7 +28,3 @@ func Throwf(format string, a ...any) {
 func ThrowTrace(err error) {
 	throw("Error", fmt.Sprintf("%+v", err))
 }
-
-// throw is a function stub that connects to the bindings in wasm_exec.js to
-// allow throwing exceptions.
-func throw(exception string, message string)
