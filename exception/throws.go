@@ -19,16 +19,22 @@ package exception
 //
 //  func throw(exception string, message string) {}
 //
-//  To make running tests easy, add the following lines to your Makefile.
+// To make it easier, you can also replace throws.go temporarily with throws.dev
+// while running tests, which replaces the stub with a function that panics.
+//
+// You can also add the following lines to your Makefile.
+//
+//  wasmException = "vendor/gitlab.com/elixxir/wasm-utils/exception"
 //
 //  wasm_tests:
-//	    cp vendor/gitlab.com/elixxir/wasm-utils/exception/throw_js.s vendor/gitlab.com/elixxir/wasm-utils/exception/throw_js.s.bak
-//	    cp vendor/gitlab.com/elixxir/wasm-utils/exception/throws.go vendor/gitlab.com/elixxir/wasm-utils/exception/throws.go.bak
-//	    > vendor/gitlab.com/elixxir/wasm-utils/exception/throw_js.s
-//	    printf "package exception\nfunc throw(exception string, message string) {}" > vendor/gitlab.com/elixxir/wasm-utils/exception/throws.go
-//	    -GOOS=js GOARCH=wasm go test -v ./...
-//	    mv vendor/gitlab.com/elixxir/wasm-utils/exception/throw_js.s.bak vendor/gitlab.com/elixxir/wasm-utils/exception/throw_js.s
-//	    mv vendor/gitlab.com/elixxir/wasm-utils/exception/throws.go.bak vendor/gitlab.com/elixxir/wasm-utils/exception/throws.go
+//      echo $(wasmException)
+//      cp $(wasmException)/throw_js.s $(wasmException)/throw_js.s.bak
+//      cp $(wasmException)/throws.go $(wasmException)/throws.go.bak
+//      > $(wasmException)/throw_js.s
+//      cp $(wasmException)/throws.dev $(wasmException)/throws.go
+//      -GOOS=js GOARCH=wasm go test -v ./rsa/...
+//      mv $(wasmException)/throw_js.s.bak $(wasmException)/throw_js.s
+//      mv $(wasmException)/throws.go.bak $(wasmException)/throws.go
 //
 // [wasmbrowsertest]: https://github.com/agnivade/wasmbrowsertest
 
