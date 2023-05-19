@@ -67,7 +67,7 @@ func TestBase64ToUint8Array(t *testing.T) {
 		jsString := jsArr.Call("toString").String()
 
 		if expected != jsString {
-			t.Errorf("Failed to recevie expected string representation of "+
+			t.Errorf("Failed to receive expected string representation of "+
 				"the Uint8Array (%d).\nexpected: %s\nreceived: %s",
 				i, expected, jsString)
 		}

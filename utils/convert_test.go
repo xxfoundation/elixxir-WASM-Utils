@@ -35,7 +35,7 @@ func TestCopyBytesToGo(t *testing.T) {
 		goBytes := CopyBytesToGo(jsBytes)
 
 		if !bytes.Equal(val, goBytes) {
-			t.Errorf("Failed to recevie expected bytes from Uint8Array (%d)."+
+			t.Errorf("Failed to receive expected bytes from Uint8Array (%d)."+
 				"\nexpected: %d\nreceived: %d",
 				i, val, goBytes)
 		}
@@ -57,7 +57,7 @@ func TestCopyBytesToJS(t *testing.T) {
 		jsString := jsBytes.Call("toString").String()
 
 		if expected != jsString {
-			t.Errorf("Failed to recevie expected string representation of "+
+			t.Errorf("Failed to receive expected string representation of "+
 				"the Uint8Array (%d).\nexpected: %s\nreceived: %s",
 				i, expected, jsString)
 		}
@@ -72,7 +72,7 @@ func TestCopyBytesToJSCopyBytesToGo(t *testing.T) {
 		goBytes := CopyBytesToGo(jsBytes)
 
 		if !bytes.Equal(val, goBytes) {
-			t.Errorf("Failed to recevie expected bytes from Uint8Array (%d)."+
+			t.Errorf("Failed to receive expected bytes from Uint8Array (%d)."+
 				"\nexpected: %d\nreceived: %d",
 				i, val, goBytes)
 		}
@@ -100,7 +100,7 @@ func TestJsToJson(t *testing.T) {
 
 	jsJson := JsToJson(js.ValueOf(testObj))
 
-	// Javascript does not return the JSON object fields sorted so the letters
+	// Javascript does not return the JSON object fields sorted, so the letters
 	// of each Javascript string are sorted and compared
 	er := []rune(string(expected))
 	sort.SliceStable(er, func(i, j int) bool { return er[i] < er[j] })
@@ -108,7 +108,7 @@ func TestJsToJson(t *testing.T) {
 	sort.SliceStable(jj, func(i, j int) bool { return jj[i] < jj[j] })
 
 	if string(er) != string(jj) {
-		t.Errorf("Recieved incorrect JSON from Javascript object."+
+		t.Errorf("Received incorrect JSON from the Javascript object."+
 			"\nexpected: %s\nreceived: %s", expected, jsJson)
 	}
 }
@@ -124,7 +124,7 @@ func TestJsToJson_Undefined(t *testing.T) {
 	jsJson := JsToJson(js.Undefined())
 
 	if string(expected) != jsJson {
-		t.Errorf("Recieved incorrect JSON from Javascript object."+
+		t.Errorf("Received incorrect JSON from the Javascript object."+
 			"\nexpected: %s\nreceived: %s", expected, jsJson)
 	}
 }
@@ -149,7 +149,7 @@ func TestJsonToJS(t *testing.T) {
 
 	jsObj, err := JsonToJS(jsonData)
 	if err != nil {
-		t.Errorf("Failed to convert JSON to Javascript object: %+v", err)
+		t.Errorf("Failed to convert JSON to a Javascript object: %+v", err)
 	}
 
 	for key, val := range testObj {
@@ -229,7 +229,7 @@ func TestJsonToJSJsToJson(t *testing.T) {
 
 	jsJson := JsToJson(jsObj)
 
-	// Javascript does not return the JSON object fields sorted so the letters
+	// Javascript does not return the JSON object fields sorted, so the letters
 	// of each Javascript string are sorted and compared
 	er := []rune(string(jsonData))
 	sort.SliceStable(er, func(i, j int) bool { return er[i] < er[j] })

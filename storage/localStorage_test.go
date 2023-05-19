@@ -74,7 +74,7 @@ func TestLocalStorage_Get_NotExistError(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.RemoveItem deletes a key from store and that it
+// Tests that LocalStorage.RemoveItem deletes a key from the store and that it
 // cannot be retrieved.
 func TestLocalStorage_RemoveItem(t *testing.T) {
 	keyName := "key"

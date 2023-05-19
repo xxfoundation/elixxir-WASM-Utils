@@ -65,7 +65,7 @@ func TestJsErrorToJson(t *testing.T) {
 
 	jsJson := JsErrorToJson(js.ValueOf(testObj))
 
-	// Javascript does not return the JSON object fields sorted so the letters
+	// Javascript does not return the JSON object fields sorted, so the letters
 	// of each Javascript string are sorted and compared
 	er := []rune(string(expected))
 	sort.SliceStable(er, func(i, j int) bool { return er[i] < er[j] })
@@ -73,7 +73,7 @@ func TestJsErrorToJson(t *testing.T) {
 	sort.SliceStable(jj, func(i, j int) bool { return jj[i] < jj[j] })
 
 	if string(er) != string(jj) {
-		t.Errorf("Recieved incorrect JSON from Javascript object."+
+		t.Errorf("Received incorrect JSON from Javascript object."+
 			"\nexpected: %s\nreceived: %s", expected, jsJson)
 	}
 }
@@ -89,7 +89,7 @@ func TestJsErrorToJson_Undefined(t *testing.T) {
 	jsJson := JsErrorToJson(js.Undefined())
 
 	if string(expected) != jsJson {
-		t.Errorf("Recieved incorrect JSON from Javascript object."+
+		t.Errorf("Received incorrect JSON from Javascript object."+
 			"\nexpected: %s\nreceived: %s", expected, jsJson)
 	}
 }
@@ -102,7 +102,7 @@ func TestJsErrorToJson_ErrorObject(t *testing.T) {
 	jsJson := JsErrorToJson(jsErr)
 
 	if !strings.Contains(jsJson, expected) {
-		t.Errorf("Recieved incorrect JSON from Javascript error."+
+		t.Errorf("Received incorrect JSON from Javascript error."+
 			"\nexpected: %s\nreceived: %s", expected, jsJson)
 	}
 }

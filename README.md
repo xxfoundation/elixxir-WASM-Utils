@@ -15,7 +15,7 @@ $ GOOS=js GOARCH=wasm go build -o xxdk.wasm
 ### Running Unit Tests
 
 This repository depends on `syscall/js`, which requires a Javascript environment
-to run, such as running them in a browser. To automate this process get
+to run, such as running them in a browser. To automate this process, get
 [wasmbrowsertest](https://github.com/agnivade/wasmbrowsertest) and follow their
 [installation instructions](https://github.com/agnivade/wasmbrowsertest#quickstart).
 Then, tests can be run using the following command.

@@ -10,7 +10,7 @@
 package exception
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"syscall/js"
 )
 
@@ -47,7 +47,9 @@ func handleRecovery(r interface{}) error {
 		return val
 	case js.Value:
 		return js.Error{Value: val}
+	case string:
+		return errors.New(val)
 	default:
-		return fmt.Errorf("%+v", val)
+		return errors.Errorf("%+v", val)
 	}
 }

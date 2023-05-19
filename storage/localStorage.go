@@ -22,7 +22,7 @@ import (
 )
 
 // localStorageWasmPrefix is prefixed to every keyName saved to local storage by
-// LocalStorage. It allows the identifications and deletion of keys only created
+// LocalStorage. It allows the identification and deletion of keys only created
 // by this WASM binary while ignoring keys made by other scripts on the same
 // page.
 //
