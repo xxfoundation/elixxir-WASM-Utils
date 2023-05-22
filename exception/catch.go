@@ -38,6 +38,13 @@ func CatchHandler(fn func(err error)) {
 	}
 }
 
+// RunAndCatch runs the specified function and catches any exceptions thrown by
+// Javascript.
+func RunAndCatch(fn func() js.Value) (v js.Value, err error) {
+	defer Catch(&err)
+	return fn(), nil
+}
+
 func handleRecovery(r interface{}) error {
 	if r == nil {
 		return nil
