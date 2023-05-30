@@ -10,12 +10,11 @@
 package storage
 
 import (
-	"encoding/base64"
 	"os"
 	"strings"
 	"syscall/js"
 
-	// "github.com/Max-Sum/base32768"
+	"github.com/Max-Sum/base32768"
 
 	"gitlab.com/elixxir/wasm-utils/exception"
 	"gitlab.com/elixxir/wasm-utils/utils"
@@ -69,15 +68,13 @@ func (ls *LocalStorage) Get(keyName string) ([]byte, error) {
 		return nil, err
 	}
 
-	// return base32768.SafeEncoding.DecodeString(value)
-	return base64.StdEncoding.DecodeString(value)
+	return base32768.SafeEncoding.DecodeString(value)
 }
 
 // Set encodes the bytes to a string and adds them to local storage at the
 // given key name. Returns an error if local storage quota has been reached.
 func (ls *LocalStorage) Set(keyName string, keyValue []byte) error {
-	// encoded := base32768.SafeEncoding.EncodeToString(keyValue)
-	encoded := base64.StdEncoding.EncodeToString(keyValue)
+	encoded := base32768.SafeEncoding.EncodeToString(keyValue)
 	return ls.v.SetItem(ls.prefix+keyName, encoded)
 }
 
