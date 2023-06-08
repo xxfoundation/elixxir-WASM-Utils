@@ -10,19 +10,18 @@
 package storage
 
 import (
-	"encoding/base64"
 	"os"
 	"strings"
 	"syscall/js"
 
-	// "github.com/Max-Sum/base32768"
+	"github.com/Max-Sum/base32768"
 
 	"gitlab.com/elixxir/wasm-utils/exception"
 	"gitlab.com/elixxir/wasm-utils/utils"
 )
 
 // localStorageWasmPrefix is prefixed to every keyName saved to local storage by
-// LocalStorage. It allows the identification and deletion of keys only created
+// localStorage. It allows the identification and deletion of keys only created
 // by this WASM binary while ignoring keys made by other scripts on the same
 // page.
 //
@@ -32,8 +31,22 @@ const localStorageWasmPrefix = "xxdkWasmStorage/"
 
 // const localStorageWasmPrefix = "🞮🞮"
 
-// LocalStorage contains the js.Value representation of localStorage.
-type LocalStorage struct {
+// LocalStorage defines an interface for setting persistent state in a KV format
+// specifically for web-based implementations.
+type LocalStorage interface {
+	Get(key string) ([]byte, error)
+	Set(key string, value []byte) error
+	RemoveItem(keyName string)
+	Clear() int
+	ClearPrefix(prefix string) int
+	Key(n int) (string, error)
+	Keys() []string
+	Length() int
+	LocalStorageUNSAFE() *LocalStorageJS
+}
+
+// localStorage contains the js.Value representation of localStorage.
+type localStorage struct {
 	// The Javascript value containing the localStorage object
 	v *LocalStorageJS
 
@@ -46,49 +59,47 @@ type LocalStorage struct {
 // jsStorage is the global that stores Javascript as window.localStorage.
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
-var jsStorage = newLocalStorage(localStorageWasmPrefix)
+var jsStorage LocalStorage = newLocalStorage(localStorageWasmPrefix)
 
-// newLocalStorage creates a new LocalStorage object with the specified prefix.
-func newLocalStorage(prefix string) *LocalStorage {
-	return &LocalStorage{
+// newLocalStorage creates a new localStorage object with the specified prefix.
+func newLocalStorage(prefix string) *localStorage {
+	return &localStorage{
 		v:      &LocalStorageJS{js.Global().Get("localStorage")},
 		prefix: prefix,
 	}
 }
 
 // GetLocalStorage returns Javascript's local storage.
-func GetLocalStorage() *LocalStorage {
+func GetLocalStorage() LocalStorage {
 	return jsStorage
 }
 
 // Get decodes and returns the value from the local storage given its key
 // name. Returns os.ErrNotExist if the key does not exist.
-func (ls *LocalStorage) Get(keyName string) ([]byte, error) {
+func (ls *localStorage) Get(keyName string) ([]byte, error) {
 	value, err := ls.v.GetItem(ls.prefix + keyName)
 	if err != nil {
 		return nil, err
 	}
 
-	// return base32768.SafeEncoding.DecodeString(value)
-	return base64.StdEncoding.DecodeString(value)
+	return base32768.SafeEncoding.DecodeString(value)
 }
 
 // Set encodes the bytes to a string and adds them to local storage at the
 // given key name. Returns an error if local storage quota has been reached.
-func (ls *LocalStorage) Set(keyName string, keyValue []byte) error {
-	// encoded := base32768.SafeEncoding.EncodeToString(keyValue)
-	encoded := base64.StdEncoding.EncodeToString(keyValue)
+func (ls *localStorage) Set(keyName string, keyValue []byte) error {
+	encoded := base32768.SafeEncoding.EncodeToString(keyValue)
 	return ls.v.SetItem(ls.prefix+keyName, encoded)
 }
 
 // RemoveItem removes a key's value from local storage given its name. If there
 // is no item with the given key, this function does nothing.
-func (ls *LocalStorage) RemoveItem(keyName string) {
+func (ls *localStorage) RemoveItem(keyName string) {
 	ls.v.RemoveItem(ls.prefix + keyName)
 }
 
 // Clear clears all the keys in storage. Returns the number of keys cleared.
-func (ls *LocalStorage) Clear() int {
+func (ls *localStorage) Clear() int {
 	// Get a copy of all key names at once
 	keys := ls.v.KeysPrefix(ls.prefix)
 
@@ -102,7 +113,7 @@ func (ls *LocalStorage) Clear() int {
 
 // ClearPrefix clears all keys with the given prefix.  Returns the number of
 // keys cleared.
-func (ls *LocalStorage) ClearPrefix(prefix string) int {
+func (ls *localStorage) ClearPrefix(prefix string) int {
 	// Get a copy of all key names at once
 	keys := ls.v.KeysPrefix(ls.prefix + prefix)
 
@@ -116,7 +127,7 @@ func (ls *LocalStorage) ClearPrefix(prefix string) int {
 
 // Key returns the name of the nth key in localStorage. Return [os.ErrNotExist]
 // if the key does not exist. The order of keys is not defined.
-func (ls *LocalStorage) Key(n int) (string, error) {
+func (ls *localStorage) Key(n int) (string, error) {
 	keyName, err := ls.v.Key(n)
 	if err != nil {
 		return "", err
@@ -125,12 +136,12 @@ func (ls *LocalStorage) Key(n int) (string, error) {
 }
 
 // Keys returns a list of all key names in local storage.
-func (ls *LocalStorage) Keys() []string {
+func (ls *localStorage) Keys() []string {
 	return ls.v.KeysPrefix(ls.prefix)
 }
 
 // Length returns the number of keys in localStorage.
-func (ls *LocalStorage) Length() int {
+func (ls *localStorage) Length() int {
 	return ls.v.Length()
 }
 
@@ -142,7 +153,7 @@ func (ls *LocalStorage) Length() int {
 // decode/sanitize the inputs/outputs or track entries using the prefix system.
 // If using it, make sure all key names and values can be converted to valid
 // UCS-2 strings.
-func (ls *LocalStorage) LocalStorageUNSAFE() *LocalStorageJS {
+func (ls *localStorage) LocalStorageUNSAFE() *LocalStorageJS {
 	return ls.v
 }
 

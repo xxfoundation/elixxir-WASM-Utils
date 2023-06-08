@@ -21,7 +21,7 @@ import (
 
 // Unit test of GetLocalStorage.
 func TestGetLocalStorage(t *testing.T) {
-	expected := &LocalStorage{
+	expected := &localStorage{
 		v:      &LocalStorageJS{js.Global().Get("localStorage")},
 		prefix: localStorageWasmPrefix,
 	}
@@ -29,13 +29,13 @@ func TestGetLocalStorage(t *testing.T) {
 	ls := GetLocalStorage()
 
 	if !reflect.DeepEqual(expected, ls) {
-		t.Errorf("Did not receive expected LocalStorage."+
+		t.Errorf("Did not receive expected localStorage."+
 			"\nexpected: %+v\nreceived: %+v", expected, ls)
 	}
 }
 
-// Tests that a value set with LocalStorage.Set and retrieved with
-// LocalStorage.Get matches the original.
+// Tests that a value set with localStorage.Set and retrieved with
+// localStorage.Get matches the original.
 func TestLocalStorage_Get_Set(t *testing.T) {
 	values := map[string][]byte{
 		"key1": []byte("key value"),
@@ -64,7 +64,7 @@ func TestLocalStorage_Get_Set(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.Get returns the error os.ErrNotExist when the key
+// Tests that localStorage.Get returns the error os.ErrNotExist when the key
 // does not exist in storage.
 func TestLocalStorage_Get_NotExistError(t *testing.T) {
 	_, err := jsStorage.Get("someKey")
@@ -74,7 +74,7 @@ func TestLocalStorage_Get_NotExistError(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.RemoveItem deletes a key from the store and that it
+// Tests that localStorage.RemoveItem deletes a key from the store and that it
 // cannot be retrieved.
 func TestLocalStorage_RemoveItem(t *testing.T) {
 	keyName := "key"
@@ -89,10 +89,10 @@ func TestLocalStorage_RemoveItem(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.Clear deletes all the WASM keys from storage and
+// Tests that localStorage.Clear deletes all the WASM keys from storage and
 // does not remove any others
 func TestLocalStorage_Clear(t *testing.T) {
-	jsStorage.v.Clear()
+	jsStorage.LocalStorageUNSAFE().Clear()
 	const numKeys = 10
 	var yesPrefix, noPrefix []string
 
@@ -106,7 +106,7 @@ func TestLocalStorage_Clear(t *testing.T) {
 			}
 		} else {
 			noPrefix = append(noPrefix, keyName)
-			err := jsStorage.v.SetItem(keyName, strconv.Itoa(i))
+			err := jsStorage.LocalStorageUNSAFE().SetItem(keyName, strconv.Itoa(i))
 			if err != nil {
 				t.Errorf("Failed to set with no prefix %q: %+v", keyName, err)
 			}
@@ -120,7 +120,7 @@ func TestLocalStorage_Clear(t *testing.T) {
 	}
 
 	for _, keyName := range noPrefix {
-		if _, err := jsStorage.v.GetItem(keyName); err != nil {
+		if _, err := jsStorage.LocalStorageUNSAFE().GetItem(keyName); err != nil {
 			t.Errorf("Could not get keyName %q: %+v", keyName, err)
 		}
 	}
@@ -132,10 +132,10 @@ func TestLocalStorage_Clear(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.ClearPrefix deletes only the keys with the given
+// Tests that localStorage.ClearPrefix deletes only the keys with the given
 // prefix.
 func TestLocalStorage_ClearPrefix(t *testing.T) {
-	jsStorage.v.Clear()
+	jsStorage.LocalStorageUNSAFE().Clear()
 	const numKeys = 10
 	var yesPrefix, noPrefix []string
 	prefix := "keyNamePrefix/"
@@ -173,10 +173,10 @@ func TestLocalStorage_ClearPrefix(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.Key return all added keys when looping through all
+// Tests that localStorage.Key return all added keys when looping through all
 // indexes.
 func TestLocalStorage_Key(t *testing.T) {
-	jsStorage.v.Clear()
+	jsStorage.LocalStorageUNSAFE().Clear()
 	values := map[string][]byte{
 		"key1": []byte("key value"),
 		"key2": {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
@@ -207,10 +207,10 @@ func TestLocalStorage_Key(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.Key returns the error os.ErrNotExist when the index
+// Tests that localStorage.Key returns the error os.ErrNotExist when the index
 // is greater than or equal to the number of keys.
 func TestLocalStorage_Key_NotExistError(t *testing.T) {
-	jsStorage.v.Clear()
+	jsStorage.LocalStorageUNSAFE().Clear()
 	if err := jsStorage.Set("key", []byte("value")); err != nil {
 		t.Errorf("Failed to set: %+v", err)
 	}
@@ -228,10 +228,10 @@ func TestLocalStorage_Key_NotExistError(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.Length returns the correct Length when adding and
+// Tests that localStorage.Length returns the correct Length when adding and
 // removing various keys.
 func TestLocalStorage_Length(t *testing.T) {
-	jsStorage.v.Clear()
+	jsStorage.LocalStorageUNSAFE().Clear()
 	values := map[string][]byte{
 		"key1": []byte("key value"),
 		"key2": {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
@@ -263,9 +263,9 @@ func TestLocalStorage_Length(t *testing.T) {
 	}
 }
 
-// Tests that LocalStorage.Keys return a list that contains all the added keys.
+// Tests that localStorage.Keys return a list that contains all the added keys.
 func TestLocalStorage_Keys(t *testing.T) {
-	jsStorage.v.Clear()
+	jsStorage.LocalStorageUNSAFE().Clear()
 	values := map[string][]byte{
 		"key1": []byte("key value"),
 		"key2": {0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
