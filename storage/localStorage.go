@@ -32,14 +32,44 @@ const localStorageWasmPrefix = "🞮🞮"
 // LocalStorage defines an interface for setting persistent state in a KV format
 // specifically for web-based implementations.
 type LocalStorage interface {
+	// Get decodes and returns the value from the local storage given its key
+	// name. Returns os.ErrNotExist if the key does not exist.
 	Get(key string) ([]byte, error)
+
+	// Set encodes the bytes to a string and adds them to local storage at the
+	// given key name. Returns an error if local storage quota has been reached.
 	Set(key string, value []byte) error
+
+	// RemoveItem removes a key's value from local storage given its name. If
+	// there is no item with the given key, this function does nothing.
 	RemoveItem(keyName string)
+
+	// Clear clears all the keys in storage. Returns the number of keys cleared.
 	Clear() int
+
+	// ClearPrefix clears all keys with the given prefix.  Returns the number of
+	// keys cleared.
 	ClearPrefix(prefix string) int
+
+	// Key returns the name of the nth key in localStorage. Returns
+	// os.ErrNotExist if the key does not exist. The order of keys is not
+	// defined.
 	Key(n int) (string, error)
+
+	// Keys returns a list of all key names in local storage.
 	Keys() []string
+
+	// Length returns the number of keys in localStorage.
 	Length() int
+
+	// LocalStorageUNSAFE returns the underlying local storage wrapper. This can
+	// be UNSAFE and should only be used if you know what you are doing.
+	//
+	// The returned wrapper wraps all the functions and fields on the Javascript
+	// localStorage object to handle type conversions and errors. But it does
+	// not decode/sanitize the inputs/outputs or track entries using the prefix
+	// system. If using it, make sure all key names and values can be converted
+	// to valid UCS-2 strings.
 	LocalStorageUNSAFE() *LocalStorageJS
 }
 
