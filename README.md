@@ -2,7 +2,6 @@
 
 This repository contains utilities for interfacing with Javascript.
 
-
 ## Building
 
 The repository can only be compiled to a WebAssembly binary using `GOOS=js` and

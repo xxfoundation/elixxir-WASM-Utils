@@ -27,9 +27,7 @@ import (
 //
 // The chosen prefix is two characters, that when converted to UTF16, take up 4
 // bytes without any zeros to make them more unique.
-const localStorageWasmPrefix = "xxdkWasmStorage/"
-
-// const localStorageWasmPrefix = "🞮🞮"
+const localStorageWasmPrefix = "🞮🞮"
 
 // LocalStorage defines an interface for setting persistent state in a KV format
 // specifically for web-based implementations.
