@@ -1,0 +1,16 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2022 xx foundation                                             //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file.                                                              //
+////////////////////////////////////////////////////////////////////////////////
+
+package exception
+
+// This file is used in testing. Refer to throws.go for more info.
+
+import jww "github.com/spf13/jwalterweatherman"
+
+func throw(exception string, message string) {
+	jww.FATAL.Panicf("%s: %s", exception, message)
+}
