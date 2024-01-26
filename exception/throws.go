@@ -7,6 +7,8 @@
 
 package exception
 
+import "unsafe"
+
 // This file contains the stub for the throw function, which is linked via
 // assembly in throw_js.s to a custom function added to wasm_exec.js that throws
 // the passed elements. This adds the ability to throw a Javascript exception
@@ -39,4 +41,6 @@ package exception
 
 // throw is a function stub that connects to the bindings in wasm_exec.js to
 // allow throwing exceptions.
-func throw(exception string, message string)
+//
+//go:wasmimport go runtime.Throw
+func throw(exception, message unsafe.Pointer)
