@@ -9,8 +9,12 @@ package exception
 
 // This file is used in testing. Refer to throws.go for more info.
 
-import jww "github.com/spf13/jwalterweatherman"
+import (
+	"unsafe"
 
-func throw(exception string, message string) {
-	jww.FATAL.Panicf("%s: %s", exception, message)
+	jww "github.com/spf13/jwalterweatherman"
+)
+
+func throw(exception, message unsafe.Pointer) {
+	jww.FATAL.Panicf("%v: %v", exception, message)
 }
