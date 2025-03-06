@@ -40,9 +40,9 @@ type ExternalStorage interface {
 	// given key name. Returns an error if external storage quota has been reached.
 	Set(key string, value []byte) error
 
-	// RemoveItem removes a key's value from external storage given its name. If
+	// Delete removes a key's value from external storage given its name. If
 	// there is no item with the given key, this function does nothing.
-	RemoveItem(keyName string) error
+	Delete(keyName string) error
 
 	// Clear clears all the keys in storage. Returns the number of keys cleared and any error.
 	Clear() (int, error)
@@ -51,16 +51,8 @@ type ExternalStorage interface {
 	// keys cleared and any error.
 	ClearPrefix(prefix string) (int, error)
 
-	// Key returns the name of the nth key in externalStorage. Returns
-	// os.ErrNotExist if the key does not exist. The order of keys is not
-	// defined.
-	Key(n int) (string, error)
-
 	// Keys returns a list of all key names in external storage.
 	Keys() ([]string, error)
-
-	// Length returns the number of keys in externalStorage.
-	Length() (int, error)
 
 	// ExternalStorageUNSAFE returns the underlying external storage wrapper. This can
 	// be UNSAFE and should only be used if you know what you are doing.
@@ -120,8 +112,8 @@ func (ls *externalStorage) Set(keyName string, keyValue []byte) error {
 
 // RemoveItem removes a key's value from external storage given its name. If there
 // is no item with the given key, this function does nothing.
-func (ls *externalStorage) RemoveItem(keyName string) error {
-	return ls.v.RemoveItem(ls.prefix + keyName)
+func (ls *externalStorage) Delete(keyName string) error {
+	return ls.v.Delete(ls.prefix + keyName)
 }
 
 // Clear clears all the keys in storage. Returns the number of keys cleared and any error.
@@ -134,7 +126,7 @@ func (ls *externalStorage) Clear() (int, error) {
 
 	// Loop through each key
 	for _, keyName := range keys {
-		if err := ls.RemoveItem(keyName); err != nil {
+		if err := ls.Delete(keyName); err != nil {
 			return 0, err
 		}
 	}
@@ -153,22 +145,12 @@ func (ls *externalStorage) ClearPrefix(prefix string) (int, error) {
 
 	// Loop through each key
 	for _, keyName := range keys {
-		if err := ls.RemoveItem(prefix + keyName); err != nil {
+		if err := ls.Delete(prefix + keyName); err != nil {
 			return 0, err
 		}
 	}
 
 	return len(keys), nil
-}
-
-// Key returns the name of the nth key in externalStorage. Return [os.ErrNotExist]
-// if the key does not exist. The order of keys is not defined.
-func (ls *externalStorage) Key(n int) (string, error) {
-	keyName, err := ls.v.Key(n)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimPrefix(keyName, ls.prefix), nil
 }
 
 // Keys returns a list of all key names in external storage.
@@ -178,15 +160,6 @@ func (ls *externalStorage) Keys() ([]string, error) {
 		return nil, err
 	}
 	return keys, nil
-}
-
-// Length returns the number of keys in externalStorage.
-func (ls *externalStorage) Length() (int, error) {
-	length, err := ls.v.Length()
-	if err != nil {
-		return 0, err
-	}
-	return length, nil
 }
 
 // ExternalStorageUNSAFE returns the underlying external storage wrapper. This can be
@@ -205,10 +178,32 @@ func (ls *externalStorage) ExternalStorageUNSAFE() *HavenStorageJS {
 // Javascript Wrappers                                                        //
 ////////////////////////////////////////////////////////////////////////////////
 
+// StorageOperation defines the supported operations for HavenStorageJS
+type StorageOperation string
+
+const (
+	// GetItemOp represents the "getItem" operation
+	GetItemOp StorageOperation = "getItem"
+	// SetItemOp represents the "setItem" operation
+	SetItemOp StorageOperation = "setItem"
+	// DeleteOp represents the "delete" operation
+	DeleteOp StorageOperation = "delete"
+	// ClearOp represents the "clear" operation
+	ClearOp StorageOperation = "clear"
+	// KeysOp represents the "getKeys" operation
+	KeysOp StorageOperation = "getKeys"
+)
+
 // HavenStorageJS stores the Javascript window.havenStorage object and wraps all
 // of its methods and fields to handle type conversations and errors.
 type HavenStorageJS struct {
 	js.Value
+}
+
+// callStorage is a helper function that calls the specified operation on the storage object
+// with the provided arguments and returns the result.
+func (ls *HavenStorageJS) callStorage(op StorageOperation, args ...interface{}) js.Value {
+	return ls.Call(string(op), args...)
 }
 
 // GetItem returns the value from the external storage given its key name. Returns
@@ -217,7 +212,7 @@ type HavenStorageJS struct {
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/getItem
 func (ls *HavenStorageJS) GetItem(keyName string) (keyValue string, err error) {
 	defer exception.Catch(&err)
-	promise := ls.Call("getItem", keyName)
+	promise := ls.callStorage(GetItemOp, keyName)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
 		return "", js.Error{Value: jsErr[0]}
@@ -234,7 +229,7 @@ func (ls *HavenStorageJS) GetItem(keyName string) (keyValue string, err error) {
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/setItem
 func (ls *HavenStorageJS) SetItem(keyName, keyValue string) (err error) {
 	defer exception.Catch(&err)
-	promise := ls.Call("setItem", keyName, keyValue)
+	promise := ls.callStorage(SetItemOp, keyName, keyValue)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
 		return js.Error{Value: jsErr[0]}
@@ -246,8 +241,8 @@ func (ls *HavenStorageJS) SetItem(keyName, keyValue string) (err error) {
 // is no item with the given key, this function does nothing.
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/removeItem
-func (ls *HavenStorageJS) RemoveItem(keyName string) error {
-	promise := ls.Call("removeItem", keyName)
+func (ls *HavenStorageJS) Delete(keyName string) error {
+	promise := ls.callStorage(DeleteOp, keyName)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
 		return js.Error{Value: jsErr[0]}
@@ -259,7 +254,7 @@ func (ls *HavenStorageJS) RemoveItem(keyName string) error {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/clear
 func (ls *HavenStorageJS) Clear() error {
-	promise := ls.Call("clear")
+	promise := ls.callStorage(ClearOp)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
 		return js.Error{Value: jsErr[0]}
@@ -267,22 +262,6 @@ func (ls *HavenStorageJS) Clear() error {
 	return nil
 }
 
-// Key returns the name of the nth key in externalStorage. Return [os.ErrNotExist]
-// if the key does not exist. The order of keys is not defined.
-//
-// Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/key
-func (ls *HavenStorageJS) Key(n int) (keyName string, err error) {
-	defer exception.Catch(&err)
-	promise := ls.Call("key", n)
-	result, jsErr := utils.Await(promise)
-	if jsErr != nil {
-		return "", js.Error{Value: jsErr[0]}
-	}
-	if result[0].IsNull() {
-		return "", os.ErrNotExist
-	}
-	return result[0].String(), nil
-}
 
 // Keys returns a list of all key names in external storage.
 func (ls *HavenStorageJS) Keys() ([]string, error) {
@@ -303,7 +282,7 @@ func (ls *HavenStorageJS) Keys() ([]string, error) {
 // KeysPrefix returns a list of all key names in external storage with the given
 // prefix and trims the prefix from each key name.
 func (ls *HavenStorageJS) KeysPrefix(prefix string) ([]string, error) {
-	promise := ls.Call("keys")
+	promise := ls.callStorage(KeysOp)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
 		return []string{}, js.Error{Value: jsErr[0]}
@@ -318,16 +297,4 @@ func (ls *HavenStorageJS) KeysPrefix(prefix string) ([]string, error) {
 		}
 	}
 	return keys, nil
-}
-
-// Length returns the number of keys in externalStorage.
-//
-// Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/length
-func (ls *HavenStorageJS) Length() (int, error) {
-	promise := ls.Call("length")
-	result, jsErr := utils.Await(promise)
-	if jsErr != nil {
-		return 0, js.Error{Value: jsErr[0]}
-	}
-	return result[0].Int(), nil
 }
