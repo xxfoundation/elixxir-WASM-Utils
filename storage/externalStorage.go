@@ -10,6 +10,7 @@
 package storage
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"syscall/js"
@@ -28,6 +29,8 @@ import (
 // The chosen prefix is two characters, that when converted to UTF16, take up 4
 // bytes without any zeros to make them more unique.
 const externalStorageWasmPrefix = "🞮🞮"
+
+var UnimplementedErr = errors.New("not implemented")
 
 // ExternalStorage defines an interface for setting persistent state in a KV format
 // specifically for web-based implementations.
@@ -50,6 +53,11 @@ type ExternalStorage interface {
 	// ClearPrefix clears all keys with the given prefix. Returns the number of
 	// keys cleared and any error.
 	ClearPrefix(prefix string) (int, error)
+
+	// Key returns the name of the nth key in externalStorage. Returns
+	// os.ErrNotExist if the key does not exist. The order of keys is not
+	// defined.
+	Key(n int) (string, error)
 
 	// Keys returns a list of all key names in external storage.
 	Keys() ([]string, error)
@@ -151,6 +159,16 @@ func (ls *externalStorage) ClearPrefix(prefix string) (int, error) {
 	}
 
 	return len(keys), nil
+}
+
+// Key returns the name of the nth key in externalStorage. Return [os.ErrNotExist]
+// if the key does not exist. The order of keys is not defined.
+func (ls *externalStorage) Key(n int) (string, error) {
+	keyName, err := ls.v.Key(n)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(keyName, ls.prefix), nil
 }
 
 // Keys returns a list of all key names in external storage.
@@ -262,6 +280,25 @@ func (ls *HavenStorageJS) Clear() error {
 	return nil
 }
 
+// Key returns the name of the nth key in externalStorage. Return [os.ErrNotExist]
+// if the key does not exist. The order of keys is not defined.
+//
+// Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/key
+func (ls *HavenStorageJS) Key(n int) (keyName string, err error) {
+	defer exception.Catch(&err)
+	promise := ls.Call("key", n)
+	result, jsErr := utils.Await(promise)
+	if jsErr != nil {
+		if jsErr[0].Type() == js.TypeString && jsErr[0].String() == "not implemented" {
+			return "", UnimplementedErr
+		}
+		return "", js.Error{Value: jsErr[0]}
+	}
+	if result[0].IsNull() {
+		return "", os.ErrNotExist
+	}
+	return result[0].String(), nil
+}
 
 // Keys returns a list of all key names in external storage.
 func (ls *HavenStorageJS) Keys() ([]string, error) {
