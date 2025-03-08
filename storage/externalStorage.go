@@ -87,6 +87,17 @@ type externalStorage struct {
 // jsStorage is the global that stores Javascript as window.havenStorage.
 var jsExternalStorage ExternalStorage = newExternalStorage(externalStorageWasmPrefix)
 
+// checkUnimplementedErr checks if the error is UnimplementedErr, if yes return
+// UnimplementedErr otherwise return the error
+func checkUnimplementedErr(jsErr []js.Value) error {
+	// todo it can be of non error type
+	jsError := js.Error{Value: jsErr[0]}
+	if jsError.Error() == "JavaScript error: not implemented" {
+		return UnimplementedErr
+	}
+	return jsError
+}
+
 // newExternalStorage creates a new externalStorage object with the specified prefix.
 func newExternalStorage(prefix string) *externalStorage {
 	return &externalStorage{
@@ -233,7 +244,7 @@ func (ls *HavenStorageJS) GetItem(keyName string) (keyValue string, err error) {
 	promise := ls.callStorage(GetItemOp, keyName)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
-		return "", js.Error{Value: jsErr[0]}
+		return "", checkUnimplementedErr(jsErr)
 	}
 	if result[0].IsNull() {
 		return "", os.ErrNotExist
@@ -250,7 +261,7 @@ func (ls *HavenStorageJS) SetItem(keyName, keyValue string) (err error) {
 	promise := ls.callStorage(SetItemOp, keyName, keyValue)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
-		return js.Error{Value: jsErr[0]}
+		return checkUnimplementedErr(jsErr)
 	}
 	return nil
 }
@@ -263,7 +274,7 @@ func (ls *HavenStorageJS) Delete(keyName string) error {
 	promise := ls.callStorage(DeleteOp, keyName)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
-		return js.Error{Value: jsErr[0]}
+		return checkUnimplementedErr(jsErr)
 	}
 	return nil
 }
@@ -275,7 +286,7 @@ func (ls *HavenStorageJS) Clear() error {
 	promise := ls.callStorage(ClearOp)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
-		return js.Error{Value: jsErr[0]}
+		return checkUnimplementedErr(jsErr)
 	}
 	return nil
 }
@@ -289,10 +300,7 @@ func (ls *HavenStorageJS) Key(n int) (keyName string, err error) {
 	promise := ls.Call("key", n)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
-		if jsErr[0].Type() == js.TypeString && jsErr[0].String() == "not implemented" {
-			return "", UnimplementedErr
-		}
-		return "", js.Error{Value: jsErr[0]}
+		return "", checkUnimplementedErr(jsErr)
 	}
 	if result[0].IsNull() {
 		return "", os.ErrNotExist
@@ -305,7 +313,7 @@ func (ls *HavenStorageJS) Keys() ([]string, error) {
 	promise := ls.Call("keys")
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
-		return []string{}, js.Error{Value: jsErr[0]}
+		return []string{}, checkUnimplementedErr(jsErr)
 	}
 
 	keysJS := result[0]
@@ -322,7 +330,7 @@ func (ls *HavenStorageJS) KeysPrefix(prefix string) ([]string, error) {
 	promise := ls.callStorage(KeysOp)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
-		return []string{}, js.Error{Value: jsErr[0]}
+		return []string{}, checkUnimplementedErr(jsErr)
 	}
 
 	keysJS := result[0]
