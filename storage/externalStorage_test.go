@@ -50,7 +50,15 @@ func setupMockHavenStorage(_ *testing.T) {
 		key: function(index) {
 			// To Test unimplemented error
 			return Promise.reject(new Error('not implemented'));
-		}
+		},
+
+		isMemStore: function() {
+			return Promise.resolve(false);
+		},
+
+		length: function() {
+			return Promise.resolve(0);
+		},
 	};
 
 	// Initialize mock storage
@@ -59,6 +67,85 @@ func setupMockHavenStorage(_ *testing.T) {
 	`
 	js.Global().Call("eval", setupScript)
 	jsExternalStorage = newExternalStorage(externalStorageWasmPrefix)
+}
+
+func TestExternalStorage_GetPrefix(t *testing.T) {
+	setupMockHavenStorage(t)
+
+	es := GetExternalStorage()
+
+	prefix := es.GetPrefix()
+	if prefix != externalStorageWasmPrefix {
+		t.Errorf("Expected prefix to be %q, got %q", externalStorageWasmPrefix, prefix)
+	}
+}
+
+func TestExternalStorage_HasPrefix(t *testing.T) {
+	setupMockHavenStorage(t)
+
+	es := GetExternalStorage()
+
+	hasPrefix := es.HasPrefix(externalStorageWasmPrefix)
+	if !hasPrefix {
+		t.Errorf("Expected hasPrefix to be true")
+	}
+
+	hasPrefix = es.HasPrefix("someOtherPrefix")
+	if hasPrefix {
+		t.Errorf("Expected hasPrefix to be false")
+	}
+}
+
+func TestExternalStorage_Prefix(t *testing.T) {
+	setupMockHavenStorage(t)
+
+	es := GetExternalStorage()
+
+	prefix, err := es.Prefix("testPrefix")
+	if err != nil {
+		t.Errorf("Failed to get prefix: %+v", err)
+	}
+
+	if prefix.GetPrefix() != externalStorageWasmPrefix+"testPrefix" {
+		t.Errorf("Expected prefix to be %q, got %q", externalStorageWasmPrefix+"testPrefix", prefix.GetPrefix())
+	}
+}
+
+func TestExternalStorage_Root(t *testing.T) {
+	setupMockHavenStorage(t)
+
+	es := GetExternalStorage()
+
+	root := es.Root()
+	if root.GetPrefix() != "" {
+		t.Errorf("Expected prefix to be %q, got %q", "", root.GetPrefix())
+	}
+}
+
+func TestExternalStorage_IsMemStore(t *testing.T) {
+	setupMockHavenStorage(t)
+
+	es := GetExternalStorage()
+
+	isMemStore, err := es.IsMemStore()
+	if err != nil {
+		t.Errorf("Failed to get isMemStore: %+v", err)
+	}
+
+	if isMemStore {
+		t.Errorf("Expected memstore to be false")
+	}
+}
+
+func TestExternalStorage_Length(t *testing.T) {
+	setupMockHavenStorage(t)
+
+	es := GetExternalStorage()
+
+	length := es.Length()
+	if length != 0 {
+		t.Errorf("Expected length to be %d, got %d", 0, length)
+	}
 }
 
 // Unit test of GetExternalStorage.

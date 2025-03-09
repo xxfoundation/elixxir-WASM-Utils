@@ -62,6 +62,24 @@ type ExternalStorage interface {
 	// Keys returns a list of all key names in external storage.
 	Keys() ([]string, error)
 
+	// GetPrefix returns the full Prefix of the KV
+	GetPrefix() string
+
+	// HasPrefix returns whether this prefix exists in the KV
+	HasPrefix(prefix string) bool
+
+	// Prefix returns a new KV with the new prefix appending
+	Prefix(prefix string) (ExternalStorage, error)
+
+	// Root returns the KV with no prefixes
+	Root() ExternalStorage
+
+	// IsMemStore returns true if the underlying KV is memory based
+	IsMemStore() (bool, error)
+
+	// Length returns the number of keys in localStorage.
+	Length() int
+
 	// ExternalStorageUNSAFE returns the underlying external storage wrapper. This can
 	// be UNSAFE and should only be used if you know what you are doing.
 	//
@@ -191,6 +209,30 @@ func (ls *externalStorage) Keys() ([]string, error) {
 	return keys, nil
 }
 
+func (ls *externalStorage) GetPrefix() string {
+	return ls.prefix
+}
+
+func (ls *externalStorage) HasPrefix(prefix string) bool {
+	return strings.HasPrefix(ls.prefix, prefix)
+}
+
+func (ls *externalStorage) Prefix(prefix string) (ExternalStorage, error) {
+	return newExternalStorage(ls.prefix + prefix), nil
+}
+
+func (ls *externalStorage) Root() ExternalStorage {
+	return newExternalStorage("")
+}
+
+func (ls *externalStorage) IsMemStore() (bool, error) {
+	return ls.v.IsMemStore()
+}
+
+func (ls *externalStorage) Length() int {
+	return ls.v.Length()
+}
+
 // ExternalStorageUNSAFE returns the underlying external storage wrapper. This can be
 // UNSAFE and should only be used if you know what you are doing.
 //
@@ -221,6 +263,9 @@ const (
 	ClearOp StorageOperation = "clear"
 	// KeysOp represents the "getKeys" operation
 	KeysOp StorageOperation = "getKeys"
+
+	// IsMemStoreOp represents the "isMemStore" operation
+	IsMemStoreOp StorageOperation = "isMemStore"
 )
 
 // HavenStorageJS stores the Javascript window.havenStorage object and wraps all
@@ -310,7 +355,7 @@ func (ls *HavenStorageJS) Key(n int) (keyName string, err error) {
 
 // Keys returns a list of all key names in external storage.
 func (ls *HavenStorageJS) Keys() ([]string, error) {
-	promise := ls.Call("keys")
+	promise := ls.callStorage(KeysOp)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
 		return []string{}, checkUnimplementedErr(jsErr)
@@ -342,4 +387,19 @@ func (ls *HavenStorageJS) KeysPrefix(prefix string) ([]string, error) {
 		}
 	}
 	return keys, nil
+}
+
+func (ls *HavenStorageJS) IsMemStore() (bool, error) {
+	result := ls.callStorage(IsMemStoreOp)
+	var err error
+	defer exception.Catch(&err)
+	if err != nil {
+		//TODO
+		jsErr, ok := err.(js.Error)
+		if ok {
+			return false, checkUnimplementedErr([]js.Value{js.ValueOf(jsErr)})
+		}
+		return false, err
+	}
+	return result.Bool(), nil
 }
