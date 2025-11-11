@@ -232,6 +232,12 @@ func (ls *LocalStorageJS) SetItem(keyName, keyValue string) (err error) {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/removeItem
 func (ls *LocalStorageJS) RemoveItem(keyName string) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Log but don't return error since this is void function
+			utils.ErrFromPanic(r)
+		}
+	}()
 	ls.Call("removeItem", keyName)
 }
 
@@ -239,6 +245,12 @@ func (ls *LocalStorageJS) RemoveItem(keyName string) {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/clear
 func (ls *LocalStorageJS) Clear() {
+	defer func() {
+		if r := recover(); r != nil {
+			// Log but don't return error since this is void function
+			utils.ErrFromPanic(r)
+		}
+	}()
 	ls.Call("clear")
 }
 
@@ -261,6 +273,11 @@ func (ls *LocalStorageJS) Key(n int) (keyName string, err error) {
 
 // Keys returns a list of all key names in local storage.
 func (ls *LocalStorageJS) Keys() []string {
+	defer func() {
+		if r := recover(); r != nil {
+			utils.ErrFromPanic(r)
+		}
+	}()
 	keysJS := utils.Object.Call("keys", ls.Value)
 	keys := make([]string, keysJS.Length())
 	for i := range keys {
@@ -272,6 +289,11 @@ func (ls *LocalStorageJS) Keys() []string {
 // KeysPrefix returns a list of all key names in local storage with the given
 // prefix and trims the prefix from each key name.
 func (ls *LocalStorageJS) KeysPrefix(prefix string) []string {
+	defer func() {
+		if r := recover(); r != nil {
+			utils.ErrFromPanic(r)
+		}
+	}()
 	keysJS := utils.Object.Call("keys", ls.Value)
 	keys := make([]string, 0, keysJS.Length())
 	for i := 0; i < keysJS.Length(); i++ {
@@ -287,5 +309,10 @@ func (ls *LocalStorageJS) KeysPrefix(prefix string) []string {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/length
 func (ls *LocalStorageJS) Length() int {
+	defer func() {
+		if r := recover(); r != nil {
+			utils.ErrFromPanic(r)
+		}
+	}()
 	return ls.Get("length").Int()
 }

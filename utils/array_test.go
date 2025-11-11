@@ -53,10 +53,16 @@ func TestUint8ArrayToBase64(t *testing.T) {
 func TestBase64ToUint8Array(t *testing.T) {
 	for i, val := range testBytes {
 		b64 := base64.StdEncoding.EncodeToString(val)
-		jsArr, err := base64ToUint8Array(js.ValueOf(b64))
-		if err != nil {
-			t.Errorf("Failed to convert js.Value to base 64: %+v", err)
+		promise := Base64ToUint8Array(js.Value{}, []js.Value{js.ValueOf(b64)})
+
+		// Await the promise
+		result, jsErr := Await(promise.(js.Value))
+		if jsErr != nil {
+			t.Errorf("Failed to convert js.Value to base 64: %+v", jsErr)
+			continue
 		}
+
+		jsArr := result[0]
 
 		// Generate the expected string to match the output of toString() on a
 		// Uint8Array
@@ -80,11 +86,16 @@ func TestBase64ToUint8Array(t *testing.T) {
 func TestBase64ToUint8ArrayUint8ArrayToBase64(t *testing.T) {
 	for i, val := range testBytes {
 		b64 := base64.StdEncoding.EncodeToString(val)
-		jsArr, err := base64ToUint8Array(js.ValueOf(b64))
-		if err != nil {
-			t.Errorf("Failed to convert js.Value to base 64: %+v", err)
+		promise := Base64ToUint8Array(js.Value{}, []js.Value{js.ValueOf(b64)})
+
+		// Await the promise
+		result, jsErr := Await(promise.(js.Value))
+		if jsErr != nil {
+			t.Errorf("Failed to convert js.Value to base 64: %+v", jsErr)
+			continue
 		}
 
+		jsArr := result[0]
 		jsB64 := Uint8ArrayToBase64(js.Value{}, []js.Value{jsArr})
 
 		if b64 != jsB64 {

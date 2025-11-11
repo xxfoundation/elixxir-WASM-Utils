@@ -322,7 +322,12 @@ func (ls *HavenStorageJS) SetItem(keyName, keyValue string) (err error) {
 // is no item with the given key, this function does nothing.
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/removeItem
-func (ls *HavenStorageJS) Delete(keyName string) error {
+func (ls *HavenStorageJS) Delete(keyName string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	promise := ls.callStorage(DeleteOp, keyName)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
@@ -334,7 +339,12 @@ func (ls *HavenStorageJS) Delete(keyName string) error {
 // Clear clears all the keys in storage.
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/clear
-func (ls *HavenStorageJS) Clear() error {
+func (ls *HavenStorageJS) Clear() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	promise := ls.callStorage(ClearOp)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
@@ -365,7 +375,12 @@ func (ls *HavenStorageJS) Key(n int) (keyName string, err error) {
 }
 
 // Keys returns a list of all key names in external storage.
-func (ls *HavenStorageJS) Keys() ([]string, error) {
+func (ls *HavenStorageJS) Keys() (keys []string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	promise := ls.callStorage(KeysOp)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
@@ -373,7 +388,7 @@ func (ls *HavenStorageJS) Keys() ([]string, error) {
 	}
 
 	keysJS := result[0]
-	keys := make([]string, keysJS.Length())
+	keys = make([]string, keysJS.Length())
 	for i := range keys {
 		keys[i] = keysJS.Index(i).String()
 	}
@@ -382,7 +397,12 @@ func (ls *HavenStorageJS) Keys() ([]string, error) {
 
 // KeysPrefix returns a list of all key names in external storage with the given
 // prefix and trims the prefix from each key name.
-func (ls *HavenStorageJS) KeysPrefix(prefix string) ([]string, error) {
+func (ls *HavenStorageJS) KeysPrefix(prefix string) (keys []string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	promise := ls.callStorage(KeysOp)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
@@ -390,7 +410,7 @@ func (ls *HavenStorageJS) KeysPrefix(prefix string) ([]string, error) {
 	}
 
 	keysJS := result[0]
-	keys := make([]string, 0, keysJS.Length())
+	keys = make([]string, 0, keysJS.Length())
 	for i := 0; i < keysJS.Length(); i++ {
 		keyName := keysJS.Index(i).String()
 		if strings.HasPrefix(keyName, prefix) {
