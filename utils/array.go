@@ -51,7 +51,7 @@ func Base64ToUint8Array(this js.Value, args []js.Value) any {
 			resolve.Invoke(CopyBytesToJS(b))
 		}()
 
-		return nil
+		return js.Undefined()
 	})
 
 	return Promise.New(handler)

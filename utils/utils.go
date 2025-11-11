@@ -123,10 +123,15 @@ func SafeFunc(fn func(this js.Value, args []js.Value) (any, error)) js.Func {
 				}
 
 				// Success - resolve Promise with result
-				resolve.Invoke(result)
+				// Handle nil result (Go 1.25+ doesn't allow js.ValueOf(nil))
+				if result == nil {
+					resolve.Invoke(js.Undefined())
+				} else {
+					resolve.Invoke(result)
+				}
 			}()
 
-			return nil
+			return js.Undefined()
 		})
 
 		// Create and return new Promise
@@ -143,7 +148,7 @@ func Await(awaitable js.Value) (result []js.Value, err []js.Value) {
 	defer close(then)
 	thenFunc := js.FuncOf(func(this js.Value, args []js.Value) any {
 		then <- args
-		return nil
+		return js.Undefined()
 	})
 	defer thenFunc.Release()
 
@@ -151,7 +156,7 @@ func Await(awaitable js.Value) (result []js.Value, err []js.Value) {
 	defer close(catch)
 	catchFunc := js.FuncOf(func(this js.Value, args []js.Value) any {
 		catch <- args
-		return nil
+		return js.Undefined()
 	})
 	defer catchFunc.Release()
 
