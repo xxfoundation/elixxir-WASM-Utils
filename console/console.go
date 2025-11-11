@@ -10,23 +10,13 @@
 package console
 
 import (
-	"gitlab.com/elixxir/wasm-utils/exception"
 	"syscall/js"
 )
 
 var console js.Value
 
 func init() {
-	c, err := getConsole()
-	if err != nil {
-		exception.Throwf("Failed to load console: %+v", err)
-	}
-	console = c
-}
-
-func getConsole() (v js.Value, err error) {
-	exception.Catch(&err)
-	return js.Global().Get("console"), nil
+	console = js.Global().Get("console")
 }
 
 func Assert(args ...any) { console.Call("assert", args) }

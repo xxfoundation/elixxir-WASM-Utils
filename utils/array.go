@@ -12,7 +12,6 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
-	"gitlab.com/elixxir/wasm-utils/exception"
 	"syscall/js"
 )
 
@@ -33,26 +32,29 @@ func Uint8ArrayToBase64(_ js.Value, args []js.Value) any {
 //   - args[0] - Base 64 encoded string (string).
 //
 // Returns:
-//   - Javascript 8-bit unsigned integer array (Uint8Array).
-//   - Throws TypeError if decoding the string fails.
-func Base64ToUint8Array(_ js.Value, args []js.Value) any {
-	b, err := base64ToUint8Array(args[0])
-	if err != nil {
-		exception.Throw(err)
-	}
+//   - Promise that resolves to Javascript 8-bit unsigned integer array (Uint8Array).
+//   - Rejects with error if decoding the string fails.
+func Base64ToUint8Array(this js.Value, args []js.Value) any {
+	// Manually wrap in promise for immediate execution
+	handler := js.FuncOf(func(_ js.Value, promiseArgs []js.Value) any {
+		resolve := promiseArgs[0]
+		reject := promiseArgs[1]
 
-	return b
-}
+		go func() {
+			b, err := base64.StdEncoding.DecodeString(args[0].String())
+			if err != nil {
+				errorConstructor := js.Global().Get("Error")
+				errorObject := errorConstructor.New(err.Error())
+				reject.Invoke(errorObject)
+				return
+			}
+			resolve.Invoke(CopyBytesToJS(b))
+		}()
 
-// base64ToUint8Array is a helper function that returns an error instead of
-// throwing it.
-func base64ToUint8Array(base64String js.Value) (js.Value, error) {
-	b, err := base64.StdEncoding.DecodeString(base64String.String())
-	if err != nil {
-		return js.Value{}, err
-	}
+		return nil
+	})
 
-	return CopyBytesToJS(b), nil
+	return Promise.New(handler)
 }
 
 // Uint8ArrayEquals returns true if the two Uint8Array are equal and false

@@ -10,6 +10,8 @@
 package utils
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"syscall/js"
@@ -47,29 +49,89 @@ func WrapCB(parent js.Value, m string) func(args ...any) js.Value {
 	return func(args ...any) js.Value { return parent.Call(m, args...) }
 }
 
-// PromiseFn converts the Javascript Promise construct into Go.
+// ErrFromPanic converts a recovered panic value into an error.
+// Use this in defer/recover blocks to convert panics to errors.
 //
-// Call resolve with the return of the function on success. Call reject with an
-// error on failure.
-type PromiseFn func(resolve, reject func(args ...any) js.Value)
+// Example:
+//
+//	func MyFunc() (err error) {
+//	    defer func() {
+//	        if r := recover(); r != nil {
+//	            err = utils.ErrFromPanic(r)
+//	        }
+//	    }()
+//	    // ... code that might panic
+//	    return nil
+//	}
+func ErrFromPanic(r any) error {
+	jww.ERROR.Printf("Panic recovered: %+v", r)
+	return fmt.Errorf("panic: %v", r)
+}
 
-// CreatePromise creates a Javascript promise to return the value of a blocking
-// Go function to Javascript.
-func CreatePromise(f PromiseFn) any {
-	// Create handler for promise (this will be a Javascript function)
-	var handler js.Func
-	handler = js.FuncOf(func(this js.Value, args []js.Value) any {
-		// Spawn a new go routine to perform the blocking function
-		go func(resolve, reject js.Value) {
-			go handler.Release()
-			f(resolve.Invoke, reject.Invoke)
-		}(args[0], args[1])
+// SafeFunc wraps a Go function to return a JavaScript Promise that properly
+// handles both expected errors and unexpected panics.
+//
+// The wrapped function:
+// - Returns a Promise that resolves on success or rejects on error
+// - Catches panics via defer/recover and rejects the Promise
+// - Runs in a goroutine to avoid blocking the JavaScript event loop
+//
+// Usage:
+//
+//	func MyWasmFunc(_ js.Value, args []js.Value) any {
+//	    return SafeFunc(func(this js.Value, args []js.Value) (any, error) {
+//	        // Your function logic here
+//	        result, err := someOperation()
+//	        if err != nil {
+//	            return nil, err  // Becomes Promise.reject()
+//	        }
+//	        return result, nil  // Becomes Promise.resolve()
+//	    })(js.Value{}, args)
+//	}
+//
+// This replaces the deprecated CreatePromise function, which used resolve/reject
+// callbacks and did not include panic recovery.
+func SafeFunc(fn func(this js.Value, args []js.Value) (any, error)) js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		// Create Promise handler
+		handler := js.FuncOf(func(_ js.Value, promiseArgs []js.Value) any {
+			resolve := promiseArgs[0]
+			reject := promiseArgs[1]
 
-		return nil
+			// Run in goroutine to avoid blocking JavaScript event loop
+			go func() {
+				// Defer panic recovery
+				defer func() {
+					if r := recover(); r != nil {
+						// Panic occurred - create JavaScript Error and reject Promise
+						errorMsg := errors.Errorf("Go panic: %v", r)
+						errorConstructor := js.Global().Get("Error")
+						errorObject := errorConstructor.New(errorMsg.Error())
+						reject.Invoke(errorObject)
+					}
+				}()
+
+				// Call the actual function
+				result, err := fn(this, args)
+
+				if err != nil {
+					// Expected error - reject Promise with Error object
+					errorConstructor := js.Global().Get("Error")
+					errorObject := errorConstructor.New(err.Error())
+					reject.Invoke(errorObject)
+					return
+				}
+
+				// Success - resolve Promise with result
+				resolve.Invoke(result)
+			}()
+
+			return nil
+		})
+
+		// Create and return new Promise
+		return Promise.New(handler)
 	})
-
-	// Create and return the Promise object
-	return Promise.New(handler)
 }
 
 // Await waits on a Javascript value. It blocks until the awaitable successfully

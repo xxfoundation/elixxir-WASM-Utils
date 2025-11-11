@@ -17,7 +17,6 @@ import (
 
 	"github.com/Max-Sum/base32768"
 
-	"gitlab.com/elixxir/wasm-utils/exception"
 	"gitlab.com/elixxir/wasm-utils/utils"
 )
 
@@ -285,7 +284,11 @@ func (ls *HavenStorageJS) callStorage(op StorageOperation, args ...interface{}) 
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/getItem
 func (ls *HavenStorageJS) GetItem(keyName string) (keyValue string, err error) {
-	defer exception.Catch(&err)
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	promise := ls.callStorage(GetItemOp, keyName)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
@@ -302,7 +305,11 @@ func (ls *HavenStorageJS) GetItem(keyName string) (keyValue string, err error) {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/setItem
 func (ls *HavenStorageJS) SetItem(keyName, keyValue string) (err error) {
-	defer exception.Catch(&err)
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	promise := ls.callStorage(SetItemOp, keyName, keyValue)
 	_, jsErr := utils.Await(promise)
 	if jsErr != nil {
@@ -341,7 +348,11 @@ func (ls *HavenStorageJS) Clear() error {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/key
 func (ls *HavenStorageJS) Key(n int) (keyName string, err error) {
-	defer exception.Catch(&err)
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	promise := ls.Call("key", n)
 	result, jsErr := utils.Await(promise)
 	if jsErr != nil {
@@ -390,9 +401,13 @@ func (ls *HavenStorageJS) KeysPrefix(prefix string) ([]string, error) {
 }
 
 func (ls *HavenStorageJS) IsMemStore() (bool, error) {
-	result := ls.callStorage(IsMemStoreOp)
 	var err error
-	defer exception.Catch(&err)
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
+	result := ls.callStorage(IsMemStoreOp)
 	if err != nil {
 		//TODO
 		jsErr, ok := err.(js.Error)

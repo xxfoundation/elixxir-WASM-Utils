@@ -23,39 +23,69 @@ Then, tests can be run using the following command.
 $ GOOS=js GOARCH=wasm go test ./...
 ```
 
-Note, this will fail because `exception/throw_js.s` contains custom commands
-that require our modified `wasm_exec.js` file and wasmbrowsertest does not use
-it. To get tests to run, temporarily delete the body of `exception/throw_js.s`
-during testing.
+## Breaking Changes in v1.0.0
 
-## `wasm_exec.js`
+### Removed `exception` package
 
-`wasm_exec.js` is provided by Go and is used to import the WebAssembly module in
-the browser. It can be retrieved from Go using the following command.
+The `exception` package has been removed. It is no longer necessary with the new
+`SafeFunc` wrapper, which provides automatic panic recovery and cleaner error handling.
 
-```shell
-$ cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" .
-```
+**Migration Guide:**
 
-Note that this repository makes edits to `wasm_exec.js` and you must either use
-the one in this repository or add the following lines in the `go` `importObject`
-on `global.Go`.
-
-```javascript
-global.Go = class {
-    constructor() {
-        // ...
-        this.importObject = {
-            go: {
-                // ...
-                // func Throw(exception string, message string)
-                'gitlab.com/elixxir/wasm-utils/exception.throw': (sp) => {
-                    const exception = loadString(sp + 8)
-                    const message = loadString(sp + 24)
-                    throw globalThis[exception](message)
-                },
-            }
-        }
+Replace:
+```go
+func MyFunc(_ js.Value, args []js.Value) any {
+    result, err := someOperation()
+    if err != nil {
+        exception.ThrowTrace(err)
+        return nil
     }
+    return result
 }
 ```
+
+With:
+```go
+func MyFunc(_ js.Value, args []js.Value) any {
+    return utils.SafeFunc(func(this js.Value, args []js.Value) (any, error) {
+        result, err := someOperation()
+        if err != nil {
+            return nil, err
+        }
+        return result, nil
+    })(js.Value{}, args)
+}
+```
+
+For internal functions that need panic recovery without exposing to JavaScript:
+```go
+func MyInternalFunc() (err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            err = utils.ErrFromPanic(r)
+        }
+    }()
+    // ... code that might panic
+    return nil
+}
+```
+
+### Removed custom `wasm_exec.js`
+
+Use the standard `wasm_exec.js` from Go:
+
+```shell
+$ cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" .
+```
+
+The custom modifications are no longer needed since `SafeFunc` handles error
+propagation through standard Promise rejection.
+
+### Deprecated `CreatePromise`
+
+The `CreatePromise` function has been removed in favor of `SafeFunc`, which provides:
+- Automatic panic recovery
+- Cleaner API with `(any, error)` returns instead of `resolve/reject` callbacks
+- Better error handling through Promise rejection
+
+See the `SafeFunc` documentation in `utils/utils.go` for usage examples.

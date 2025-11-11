@@ -16,7 +16,6 @@ import (
 
 	"github.com/Max-Sum/base32768"
 
-	"gitlab.com/elixxir/wasm-utils/exception"
 	"gitlab.com/elixxir/wasm-utils/utils"
 )
 
@@ -202,7 +201,11 @@ type LocalStorageJS struct {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/getItem
 func (ls *LocalStorageJS) GetItem(keyName string) (keyValue string, err error) {
-	defer exception.Catch(&err)
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	keyValueJS := ls.Call("getItem", keyName)
 	if keyValueJS.IsNull() {
 		return "", os.ErrNotExist
@@ -215,7 +218,11 @@ func (ls *LocalStorageJS) GetItem(keyName string) (keyValue string, err error) {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/setItem
 func (ls *LocalStorageJS) SetItem(keyName, keyValue string) (err error) {
-	defer exception.Catch(&err)
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	ls.Call("setItem", keyName, keyValue)
 	return nil
 }
@@ -240,7 +247,11 @@ func (ls *LocalStorageJS) Clear() {
 //
 // Doc: https://developer.mozilla.org/en-US/docs/Web/API/Storage/key
 func (ls *LocalStorageJS) Key(n int) (keyName string, err error) {
-	defer exception.Catch(&err)
+	defer func() {
+		if r := recover(); r != nil {
+			err = utils.ErrFromPanic(r)
+		}
+	}()
 	keyNameJS := ls.Call("key", n)
 	if keyNameJS.IsNull() {
 		return "", os.ErrNotExist
