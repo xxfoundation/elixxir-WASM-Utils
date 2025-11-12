@@ -127,7 +127,14 @@ func SafeFunc(fn func(this js.Value, args []js.Value) (any, error)) js.Func {
 				if result == nil {
 					resolve.Invoke(js.Undefined())
 				} else {
-					resolve.Invoke(result)
+					// Convert result to js.Value if it isn't already
+					var jsResult js.Value
+					if v, ok := result.(js.Value); ok {
+						jsResult = v
+					} else {
+						jsResult = js.ValueOf(result)
+					}
+					resolve.Invoke(jsResult)
 				}
 			}()
 
