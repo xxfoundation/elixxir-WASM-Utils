@@ -10,7 +10,7 @@
 package utils
 
 import (
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"syscall/js"
 )
 

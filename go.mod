@@ -7,4 +7,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 )
 
-require github.com/Max-Sum/base32768 v0.0.0-20230304063302-18e6ce5945fd
+require (
+	github.com/Max-Sum/base32768 v0.0.0-20230304063302-18e6ce5945fd
+	github.com/goccy/go-json v0.10.5
+)

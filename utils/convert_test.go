@@ -11,7 +11,7 @@ package utils
 
 import (
 	"encoding/base64"
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"sort"
 	"syscall/js"
 	"testing"
